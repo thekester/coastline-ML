@@ -1,0 +1,37 @@
+#Ignore data directories
+data/test/
+data/train/
+
+# Ignore model checkpoints and saved models
+models/*.h5
+models/*.ckpt
+
+# Ignore Python cache and compiled files
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Ignore Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Ignore virtual environments
+env/
+venv/
+
+# Ignore system files
+.DS_Store
+Thumbs.db
+
+# Ignore logs and temporary files
+*.log
+*.tmp
+
+# Ignore IDE configuration files
+.vscode/
+.idea/
+
+# Ignore other system files
+*.swp
+*~
+
