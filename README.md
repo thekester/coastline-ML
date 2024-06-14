@@ -156,8 +156,8 @@ Specifies files and directories to be ignored by Git, including `data/train` and
 
 ## License
 
-This project is licensed under the terms specified by the UK Hydrographic Office for the Sentinel-2 Water Edges Dataset (SWED). Please refer to the dataset license for more details.
+The Sentinel-2 Water Edges Dataset (SWED) is licensed under the terms specified by the UK Hydrographic Office for the Sentinel-2 Water Edges Dataset (SWED). Please refer to the dataset license for more details.
 
----
+The code of coastline-ML is i dunno yet.
 
 Feel free to contribute to this project by submitting issues or pull requests. For any questions or inquiries, please contact [your email].
