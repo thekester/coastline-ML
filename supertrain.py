@@ -5,6 +5,9 @@ from sklearn.model_selection import train_test_split
 from data.process_data import load_images_and_labels, normalize_images
 from models.unet import unet_model
 import tensorflow as tf
+import matplotlib.pyplot as plt
+
+K = tf.keras.backend
 
 # Disable oneDNN custom operations
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
@@ -29,6 +32,24 @@ if gpus:
 tf.config.threading.set_inter_op_parallelism_threads(2)
 tf.config.threading.set_intra_op_parallelism_threads(2)
 
+def iou_metric(y_true, y_pred):
+    y_true = K.cast(y_true, 'float32')
+    y_pred = K.cast(y_pred, 'float32')
+    smooth = 1e-6
+    intersection = K.sum(K.abs(y_true * y_pred), axis=[1,2,3])
+    union = K.sum(y_true, axis=[1,2,3]) + K.sum(y_pred, axis=[1,2,3]) - intersection
+    iou = K.mean((intersection + smooth) / (union + smooth), axis=0)
+    return iou
+
+def dice_coef(y_true, y_pred):
+    y_true = K.cast(y_true, 'float32')
+    y_pred = K.cast(y_pred, 'float32')
+    smooth = 1e-6
+    intersection = K.sum(K.abs(y_true * y_pred), axis=[1,2,3])
+    union = K.sum(y_true, axis=[1,2,3]) + K.sum(y_pred, axis=[1,2,3])
+    dice = K.mean((2. * intersection + smooth) / (union + smooth), axis=0)
+    return dice
+
 # Load and preprocess data
 train_image_dir = 'data/train/images'
 train_label_dir = 'data/train/labels'
@@ -50,14 +71,13 @@ y_val = y_val.reshape((-1, 256, 256, 1))
 # Define model
 input_shape = (256, 256, 12)  # Shape of input images
 model = unet_model(input_shape)
-model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy', iou_metric, dice_coef])
 model.summary()
 
 # Define callbacks
 checkpoint = tf.keras.callbacks.ModelCheckpoint(
-    filepath='models/coastline_segmentation_model_epoch_{epoch:02d}.keras',
-    save_freq='epoch',
-    save_best_only=False,
+    filepath='models/coastline_segmentation_model_best.keras',
+    save_best_only=True,
     monitor='val_loss',
     mode='auto',
     verbose=1
@@ -78,3 +98,24 @@ history = model.fit(
 
 # Save the final model
 model.save('models/coastline_segmentation_model_final.keras')
+
+# Plot the training and validation metrics
+def plot_metrics(history):
+    metrics = ['loss', 'accuracy', 'iou_metric', 'dice_coef']
+    for metric in metrics:
+        plt.plot(history.history[metric], label=f'Training {metric}')
+        plt.plot(history.history[f'val_{metric}'], label=f'Validation {metric}')
+        plt.title(f'Training and Validation {metric}')
+        plt.xlabel('Epochs')
+        plt.ylabel(metric)
+        plt.legend()
+        plt.show()
+
+plot_metrics(history)
+
+# Evaluate the model on the validation set
+val_loss, val_accuracy, val_iou, val_dice = model.evaluate(X_val, y_val, verbose=1)
+print(f"Validation Loss: {val_loss}")
+print(f"Validation Accuracy: {val_accuracy}")
+print(f"Validation IoU: {val_iou}")
+print(f"Validation Dice Coefficient: {val_dice}")
